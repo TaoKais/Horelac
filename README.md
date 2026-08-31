@@ -1,27 +1,68 @@
-# Horelac
+# Tempestivus
 
 **Release:** v1.2.0
 
-Horelac is a reusable Discord availability planner written in C++20. Members submit monthly availability anonymously, with a calendar-specific alias, or with a Discord display name. The scheduling core aggregates submissions into weekly heatmaps and ranks continuous event windows conservatively.
+Tempestivus is an open-source Discord availability and attendance planner written in C++20. Members submit when they are available, and the bot turns those individual responses into weekly aggregate heatmaps that make it easy to see when a group actually overlaps.
 
-## Features
+The project is designed for gaming communities, clans, raids, tournaments, training sessions, community events, meetings, and any other group activity where several people need to find a common time.
 
-- Month calendars split into correct Monday-based partial weeks
-- Configurable 15/30/60-minute scheduling core (30 minutes recommended initially)
+Repository: https://github.com/TaoKais/Tempestivus
+
+## What it does
+
+- Monthly calendars split into correct Monday-based partial weeks
+- Weekly PNG availability heatmaps rendered directly in Discord
+- Configurable 15/30/60-minute scheduling core
 - Same-participant overlap deduplication
-- Anonymous, alias, and Discord-name identity policies
+- Aggregate participant counts per time slot
+- `Previous Week` / `Next Week` navigation
+- Private `My Schedule` view for each participant
+- Conservative `Best Times` ranking for continuous event windows
+- Owner-only daily attendee lookup
+- `Attendees` button linked to the correct calendar automatically
+- Calendar IDs displayed in the public calendar header
+- Discord server nickname capture, with Discord username fallback
+- Anonymous public scheduling with identity available privately to the calendar owner when required for coordination
 - SQLite persistence with migrations, prepared statements, foreign keys, transactions, and indexes
-- Conservative best-window ranking by minimum overlap, average overlap, and stability
-- Cairo PNG heatmap renderer separated from Discord
+- Cairo PNG rendering separated from Discord transport
 - Debounced, thread-safe per-calendar render queue
 - Persistent versioned component identifiers
-- Event and attendance persistence prepared for reminders
 - English and Spanish localization foundation
-- Catch2 tests, Docker image, and GitHub Actions CI
+- Catch2 tests, Docker deployment, and GitHub Actions CI
+
+## Screenshots
+
+### Availability heatmap
+
+Members submit availability and Tempestivus aggregates the result into a weekly heatmap. Public cells show counts such as `1/2` or `2/2`, not individual identities.
+
+![Tempestivus availability heatmap](docs/images/availability-heatmap.jpg)
+
+### My Schedule
+
+Each member can privately inspect the availability they submitted without exposing it to the rest of the server.
+
+![Tempestivus My Schedule view](docs/images/my-schedule.jpg)
+
+### Attendee lookup
+
+The calendar owner can privately query who is available on a selected day. Tempestivus uses the member's Discord server nickname when available and falls back to the Discord username.
+
+![Tempestivus attendee lookup](docs/images/attendee-lookup.jpg)
+
+## Privacy model
+
+Tempestivus is aggregate-first by design.
+
+The public calendar shows availability density and participant counts, but it does not need to expose who owns each time slot. Internal Discord user linkage is retained for deduplication, private schedule access, deletion, authorization, and organizer-only attendee lookup.
+
+The owner-only attendee view is ephemeral. This gives organizers the information needed to coordinate an event while keeping the normal heatmap focused on aggregate availability.
 
 ## Architecture
 
-Discord is an adapter around transport-neutral application services. Core scheduling code does not depend on DPP, Cairo, or SQLite. See [architecture](docs/architecture.md), [database](docs/database.md), [privacy](docs/privacy.md), and [deployment](docs/deployment.md).
+Discord is an adapter around transport-neutral application services. Core scheduling logic is independent of DPP, Cairo, and SQLite.
+
+See [architecture](docs/architecture.md), [database](docs/database.md), [privacy](docs/privacy.md), and [deployment](docs/deployment.md).
 
 ## Requirements
 
@@ -29,7 +70,9 @@ Discord is an adapter around transport-neutral application services. Core schedu
 - C++20 compiler (GCC 13+ or Clang 16+ recommended)
 - SQLite3 development package
 - Cairo and pkg-config
-- Git and network access during first configure (DPP and Catch2 are pinned with FetchContent)
+- Git and network access during the first configure step
+
+DPP and Catch2 are pinned through CMake `FetchContent`.
 
 ## Build from source
 
@@ -39,7 +82,7 @@ cmake --build build --config Release
 ctest --test-dir build --output-on-failure
 ```
 
-Copy `.env.example` to `.env`, fill the required values, then run the binary from an environment that loads those variables. `.env` is intentionally ignored; the binary does not parse dotenv files itself.
+Copy `.env.example` to `.env`, fill the required values, and run the binary from an environment that loads those variables. `.env` is intentionally ignored and credentials must never be committed.
 
 ## Docker
 
@@ -50,7 +93,13 @@ docker compose up -d --build
 docker compose logs -f horelac
 ```
 
-SQLite is persisted in the `horelac-data` volume at `/data/horelac.db`. The final container runs as an unprivileged user. GitHub hosts the source and CI; it does **not** keep the bot running. Run the container on a VPS, Docker host, home server, cloud VM, or trusted container platform.
+SQLite is persisted at `/data/horelac.db` by the current container configuration. The runtime image runs as an unprivileged user.
+
+The Docker build bundles the DPP shared library required by the bot runtime and runs `ldconfig` in the final image so `libdpp.so` can be resolved correctly.
+
+GitHub hosts the source and CI; it does **not** keep the Discord bot running. Deploy the container on a VPS, Docker host, home server, cloud VM, or trusted container platform.
+
+> Note: the public project name is now **Tempestivus**. Some internal binary, namespace, database, and Docker identifiers still use the historical `horelac` name and can be migrated independently without changing the public Discord workflow.
 
 ## Configuration
 
@@ -68,50 +117,63 @@ Without `DISCORD_DEV_GUILD_ID`, commands register globally and may take longer t
 
 ## Discord Developer Portal setup
 
-1. Open the Discord Developer Portal and create an application.
+1. Create an application in the Discord Developer Portal.
 2. Open **Bot**, create the bot, reset/copy its token, and store it only in `DISCORD_TOKEN`.
 3. Copy the Application ID into `DISCORD_APPLICATION_ID`.
-4. In OAuth2 URL Generator select scopes `bot` and `applications.commands`.
-5. Select only View Channels, Send Messages, Embed Links, Attach Files, and Use Application Commands.
+4. In the OAuth2 URL Generator select the `bot` and `applications.commands` scopes.
+5. Select only the permissions the bot needs: View Channels, Send Messages, Embed Links, Attach Files, Read Message History, and Use Application Commands.
 6. Open the generated URL and invite the bot to your server.
 
-For a direct installation link, replace `YOUR_APPLICATION_ID` in this URL:
+For a direct installation link, replace `YOUR_APPLICATION_ID`:
 
 ```text
 https://discord.com/oauth2/authorize?client_id=YOUR_APPLICATION_ID&scope=bot%20applications.commands&permissions=2147601408
 ```
 
-The numeric permission set requests only View Channels, Send Messages, Embed Links,
-Attach Files, Read Message History, and Use Application Commands. Review the permissions
-shown by Discord before authorizing. See [Discord installation](docs/discord-install.md).
-
-Do not grant Administrator. Read Message History and Manage Messages are not required by the current implementation.
+Review the permissions shown by Discord before authorizing. Do not grant Administrator.
 
 ## Commands
 
-- `/schedule create` creates an anonymous monthly calendar and immediately posts its week-one PNG heatmap.
-- `/schedule add` accepts `YYYY-MM-DD` and `HH:MM` values, saves anonymously, and refreshes the original public message.
-- `/schedule view` renders a selected weekly aggregate as an ephemeral preview.
-- `/schedule best duration:<minutes>` ranks aggregate continuous windows.
-- `/schedule clear` removes the caller's data for a calendar.
+- `/schedule create` — creates a monthly calendar and posts its week-one heatmap.
+- `/schedule add` — adds availability with `YYYY-MM-DD`, start time, and end time.
+- `/schedule view` — renders a selected weekly aggregate as an ephemeral preview.
+- `/schedule best duration:<minutes>` — ranks the best continuous aggregate windows.
+- `/schedule attendees calendar:<id> date:<YYYY-MM-DD>` — privately lists members available on a given day; calendar owner only.
+- `/schedule clear` — removes the caller's data from a calendar.
 
-The public calendar message contains the PNG and `Add Availability`, `Previous Week`, `Next Week`, `My Schedule`, and `Best Times` controls. `Add Availability` opens a private modal with date, start, and end fields. Submissions and errors are ephemeral; the bot edits the durable public message rather than posting a new heatmap. `My Schedule` is visible only to its requester.
+## Discord controls
 
-## Privacy
+Each durable public calendar message includes:
 
-Public views are aggregate-first. Anonymous schedules never expose Discord user IDs or slot ownership. Internal user linkage exists only so users can edit/delete their data, for deduplication, and for authorization. Use `/schedule clear` to remove personal data; calendar owners can delete the calendar and cascading records. See [privacy policy](docs/privacy.md).
+- **Add Availability** — opens a private modal for date, start time, and end time.
+- **Previous Week** — navigates backward through the month.
+- **Next Week** — navigates forward through the month.
+- **My Schedule** — privately shows the requester's submitted intervals.
+- **Best Times** — privately returns the strongest continuous overlap windows.
+- **Attendees** — opens a date prompt and privately returns the members available that day to the calendar owner.
 
-## Testing
+Availability submissions and private queries are ephemeral. The bot edits the existing public calendar instead of flooding the channel with a new heatmap after every change.
 
-Tests cover partial/leap months, same-user overlap deduplication, best-window ranking, invalid inputs, anonymous projections and rendering, private schedule isolation, durable Discord message references, migrations, persistence, and cascading deletion. CI fails on configuration, compilation, or test failures.
+## Discord identity handling
 
-## Current release scope
+When a member submits availability, Tempestivus stores the Discord user ID internally and records a display label for organizer-only lookup.
 
-The Discord adapter wires the application service to the Cairo renderer while keeping aggregation and persistence independent of DPP. Public heatmaps contain aggregate counts only; Discord identities remain internal for deduplication, private views, deletion, and authorization.
+The preferred label is:
+
+1. the member's **server nickname**;
+2. otherwise their Discord username.
+
+Older participant records may not have a stored nickname. Submitting or updating availability again refreshes the stored display name.
+
+## Testing and CI
+
+Tests cover partial and leap months, overlap deduplication, best-window ranking, invalid inputs, anonymous projections and rendering, private schedule isolation, daily attendee authorization, durable Discord message references, migrations, persistence, and cascading deletion.
+
+DPP dependency tests are explicitly disabled in the Tempestivus build so project CI only evaluates Tempestivus-owned tests. CI is expected to fail on configuration, compilation, or project test failures.
 
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md). Keep domain code free of Discord types, use prepared SQL, add tests for behavior changes, and never commit credentials or databases.
+Read [CONTRIBUTING.md](CONTRIBUTING.md). Keep domain code free of Discord types, use prepared SQL, add tests for behavior changes, and never commit credentials or database files.
 
 ## License
 

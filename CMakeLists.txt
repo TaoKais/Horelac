@@ -44,6 +44,11 @@ endif()
 if(HORELAC_BUILD_BOT)
     find_package(dpp CONFIG QUIET)
     if(NOT dpp_FOUND)
+        # DPP enables its own test executables by default. When Horelac is built with
+        # BUILD_TESTING=ON, those dependency tests are otherwise registered with our
+        # CTest suite and can fail because DPP's repository-only testdata is not part
+        # of the FetchContent build. Keep CI scoped to Horelac's own tests.
+        set(DPP_BUILD_TEST OFF CACHE BOOL "Build DPP test programs" FORCE)
         FetchContent_Declare(dpp
             GIT_REPOSITORY https://github.com/brainboxdotcc/DPP.git
             GIT_TAG v10.1.3
