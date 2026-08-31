@@ -1,0 +1,16 @@
+.env
+build/
+out/
+.cache/
+.vs/
+.vscode/
+*.db
+*.db-*
+data/
+logs/
+rendered/
+*.log
+*.tmp
+*.png
+!assets/*.png
+
