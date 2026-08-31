@@ -115,6 +115,40 @@ std::vector<domain::AvailabilityInterval> ScheduleService::my_schedule(
     return intervals;
 }
 
+std::vector<domain::Participant> ScheduleService::day_participants(
+    domain::CalendarId calendar_id, domain::LocalDate date,
+    domain::Snowflake actor_user_id) {
+    const auto calendar = require_calendar(calendar_id);
+    if (calendar.creator_user_id != actor_user_id) {
+        throw domain::DomainError(domain::ErrorCode::permission_denied,
+                                  "Owner permission required");
+    }
+    if (!domain::is_date_in_month(date, calendar.config.month)) {
+        throw domain::DomainError(domain::ErrorCode::invalid_input,
+                                  "Date is outside calendar month");
+    }
+
+    const auto intervals = repository_.list_intervals(calendar_id, date, date);
+    std::set<domain::ParticipantId> participant_ids;
+    for (const auto& interval : intervals) {
+        participant_ids.insert(interval.participant_id);
+    }
+
+    auto participants = repository_.list_participants(calendar_id);
+    std::erase_if(participants, [&](const auto& participant) {
+        return !participant_ids.contains(participant.id);
+    });
+    std::sort(participants.begin(), participants.end(), [](const auto& lhs, const auto& rhs) {
+        const auto left = lhs.display_name.value_or("");
+        const auto right = rhs.display_name.value_or("");
+        if (left != right) {
+            return left < right;
+        }
+        return lhs.discord_user_id < rhs.discord_user_id;
+    });
+    return participants;
+}
+
 void ScheduleService::set_calendar_message(const domain::CalendarMessageReference& reference) {
     (void)require_calendar(reference.calendar_id);
     repository_.set_calendar_message(reference.calendar_id, reference.guild_id,
