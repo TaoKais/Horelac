@@ -90,6 +90,44 @@ void ScheduleService::add_availability(const AddAvailabilityRequest& request) {
     invalidate(calendar.id);
 }
 
+domain::Calendar ScheduleService::calendar(domain::CalendarId calendar_id) {
+    return require_calendar(calendar_id);
+}
+
+std::size_t ScheduleService::week_count(domain::CalendarId calendar_id) {
+    const auto value = require_calendar(calendar_id);
+    return domain::month_weeks(value.config.month, value.config.week_start).size();
+}
+
+std::vector<domain::AvailabilityInterval> ScheduleService::my_schedule(
+    domain::CalendarId calendar_id, domain::Snowflake actor_user_id) {
+    const auto value = require_calendar(calendar_id);
+    const auto participant = repository_.find_participant(calendar_id, actor_user_id);
+    if (!participant) {
+        return {};
+    }
+    auto intervals = repository_.list_intervals(
+        calendar_id, domain::LocalDate{value.config.month / std::chrono::day{1}},
+        domain::LocalDate{value.config.month / std::chrono::last});
+    std::erase_if(intervals, [&](const auto& interval) {
+        return interval.participant_id != participant->id;
+    });
+    return intervals;
+}
+
+void ScheduleService::set_calendar_message(const domain::CalendarMessageReference& reference) {
+    (void)require_calendar(reference.calendar_id);
+    repository_.set_calendar_message(reference.calendar_id, reference.guild_id,
+                                     reference.channel_id, reference.message_id,
+                                     static_cast<int>(reference.displayed_week), false);
+}
+
+std::optional<domain::CalendarMessageReference> ScheduleService::calendar_message(
+    domain::CalendarId calendar_id) {
+    (void)require_calendar(calendar_id);
+    return repository_.find_calendar_message(calendar_id);
+}
+
 void ScheduleService::clear_my_data(domain::CalendarId calendar_id,
                                     domain::Snowflake actor_user_id) {
     (void)require_calendar(calendar_id);
@@ -177,4 +215,3 @@ void ScheduleService::invalidate(domain::CalendarId id) {
 }
 
 } // namespace horelac::services
-

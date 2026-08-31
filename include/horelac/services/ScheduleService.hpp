@@ -34,6 +34,13 @@ class ScheduleService {
     explicit ScheduleService(persistence::IScheduleRepository& repository);
     domain::Calendar create_calendar(const CreateCalendarRequest& request);
     void add_availability(const AddAvailabilityRequest& request);
+    domain::Calendar calendar(domain::CalendarId calendar_id);
+    std::size_t week_count(domain::CalendarId calendar_id);
+    std::vector<domain::AvailabilityInterval> my_schedule(domain::CalendarId calendar_id,
+                                                           domain::Snowflake actor_user_id);
+    void set_calendar_message(const domain::CalendarMessageReference& reference);
+    std::optional<domain::CalendarMessageReference> calendar_message(
+        domain::CalendarId calendar_id);
     void clear_my_data(domain::CalendarId calendar_id, domain::Snowflake actor_user_id);
     domain::WeeklyHeatmap weekly_heatmap(domain::CalendarId calendar_id, std::size_t week_index);
     std::vector<domain::BestTimeWindow> best_windows(domain::CalendarId calendar_id,
@@ -54,4 +61,3 @@ class ScheduleService {
 };
 
 } // namespace horelac::services
-

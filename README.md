@@ -56,9 +56,9 @@ SQLite is persisted in the `horelac-data` volume at `/data/horelac.db`. The fina
 
 | Variable | Required | Default | Meaning |
 |---|---:|---|---|
-| `DISCORD_TOKEN` | yes | â€” | Bot token; never log or commit it |
-| `DISCORD_APPLICATION_ID` | yes | â€” | Discord application snowflake |
-| `DISCORD_DEV_GUILD_ID` | no | â€” | Register commands instantly in one development guild |
+| `DISCORD_TOKEN` | yes | — | Bot token; never log or commit it |
+| `DISCORD_APPLICATION_ID` | yes | — | Discord application snowflake |
+| `DISCORD_DEV_GUILD_ID` | no | — | Register commands instantly in one development guild |
 | `DATABASE_PATH` | no | `./data/horelac.db` | SQLite file path |
 | `LOG_LEVEL` | no | `info` | Safe log verbosity |
 | `DEFAULT_LOCALE` | no | `en` | Fallback UI locale |
@@ -89,13 +89,13 @@ Do not grant Administrator. Read Message History and Manage Messages are not req
 
 ## Commands
 
-- `/schedule create` creates an anonymous monthly calendar and its main message.
-- `/schedule add` submits a date-specific interval; supplying an alias selects alias mode.
-- `/schedule view` shows current weekly aggregate metadata.
-- `/schedule best duration:<minutes>` ranks continuous windows.
+- `/schedule create` creates an anonymous monthly calendar and immediately posts its week-one PNG heatmap.
+- `/schedule add` accepts `YYYY-MM-DD` and `HH:MM` values, saves anonymously, and refreshes the original public message.
+- `/schedule view` renders a selected weekly aggregate as an ephemeral preview.
+- `/schedule best duration:<minutes>` ranks aggregate continuous windows.
 - `/schedule clear` removes the caller's data for a calendar.
 
-The application layer and schema also support state changes, identities, participant projections, events, attendance, durable messages, and reminder jobs. The interactive surface is intentionally versioned so additional subcommands/modals can be introduced without invalidating existing buttons.
+The public calendar message contains the PNG and `Add Availability`, `Previous Week`, `Next Week`, `My Schedule`, and `Best Times` controls. `Add Availability` opens a private modal with date, start, and end fields. Submissions and errors are ephemeral; the bot edits the durable public message rather than posting a new heatmap. `My Schedule` is visible only to its requester.
 
 ## Privacy
 
@@ -103,11 +103,11 @@ Public views are aggregate-first. Anonymous schedules never expose Discord user 
 
 ## Testing
 
-Tests cover partial/leap months, interval deduplication, best-window ranking, invalid inputs, anonymous projections, migrations, persistence, and cascading deletion. CI fails on configuration, compilation, or test failures.
+Tests cover partial/leap months, same-user overlap deduplication, best-window ranking, invalid inputs, anonymous projections and rendering, private schedule isolation, durable Discord message references, migrations, persistence, and cascading deletion. CI fails on configuration, compilation, or test failures.
 
 ## Current release scope
 
-This repository provides the production-oriented foundation and initial Discord command path. PNG generation, event persistence, render debounce, monthly models, and privacy abstractions exist as separated components; richer Discord modal/navigation/attendance presentation should be expanded against the pinned DPP API without moving business rules into handlers.
+The Discord adapter wires the application service to the Cairo renderer while keeping aggregation and persistence independent of DPP. Public heatmaps contain aggregate counts only; Discord identities remain internal for deduplication, private views, deletion, and authorization.
 
 ## Contributing
 
@@ -116,4 +116,3 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md). Keep domain code free of Discord types,
 ## License
 
 MIT. See [LICENSE](LICENSE).
-

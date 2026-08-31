@@ -33,9 +33,10 @@ class IScheduleRepository {
     virtual void set_calendar_message(domain::CalendarId calendar_id, domain::Snowflake guild_id,
                                       domain::Snowflake channel_id, domain::Snowflake message_id,
                                       int displayed_week, bool monthly) = 0;
+    virtual std::optional<domain::CalendarMessageReference> find_calendar_message(
+        domain::CalendarId calendar_id) = 0;
     virtual domain::EventId create_event(const domain::Event& event) = 0;
     virtual void set_attendance(const domain::AttendanceRecord& record) = 0;
 };
 
 } // namespace horelac::persistence
-

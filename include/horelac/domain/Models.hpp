@@ -87,6 +87,14 @@ struct WeeklyHeatmap {
     std::vector<HeatmapCell> cells;
 };
 
+struct CalendarMessageReference {
+    CalendarId calendar_id{};
+    Snowflake guild_id{};
+    Snowflake channel_id{};
+    Snowflake message_id{};
+    std::size_t displayed_week{};
+};
+
 struct BestTimeWindow {
     LocalDate date;
     int start_minute{};
@@ -117,4 +125,3 @@ struct AttendanceRecord {
 };
 
 } // namespace horelac::domain
-

@@ -37,6 +37,8 @@ class SQLiteScheduleRepository final : public IScheduleRepository {
     void set_calendar_message(domain::CalendarId calendar_id, domain::Snowflake guild_id,
                               domain::Snowflake channel_id, domain::Snowflake message_id,
                               int displayed_week, bool monthly) override;
+    std::optional<domain::CalendarMessageReference> find_calendar_message(
+        domain::CalendarId calendar_id) override;
     domain::EventId create_event(const domain::Event& event) override;
     void set_attendance(const domain::AttendanceRecord& record) override;
 
@@ -47,4 +49,3 @@ class SQLiteScheduleRepository final : public IScheduleRepository {
 };
 
 } // namespace horelac::persistence
-

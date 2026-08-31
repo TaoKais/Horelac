@@ -47,6 +47,18 @@ registration.
 The bot must remain running somewhere; inviting it does not cause Discord or GitHub to host
 the executable.
 
+## Anonymous calendar workflow
+
+Run `/schedule create` to post the calendar's durable public heatmap. Members can use its
+`Add Availability` button to enter a date and human-readable start/end times in a private
+modal. Horelac acknowledges the member ephemerally, regenerates the PNG in memory, and edits
+the original public message. Week buttons update that same message, while `My Schedule`
+shows only the requesting member's intervals in an ephemeral response.
+
+The public title, month, timezone, week, participant total, and PNG are aggregate-only.
+Discord IDs, names, aliases, and individual slot ownership are never included in public
+message content or renderer input.
+
 ## Security checklist
 
 - Keep the GitHub repository private while it contains unfinished release code.
