@@ -38,6 +38,9 @@ class ScheduleService {
     std::size_t week_count(domain::CalendarId calendar_id);
     std::vector<domain::AvailabilityInterval> my_schedule(domain::CalendarId calendar_id,
                                                            domain::Snowflake actor_user_id);
+    std::vector<domain::Participant> day_participants(domain::CalendarId calendar_id,
+                                                       domain::LocalDate date,
+                                                       domain::Snowflake actor_user_id);
     void set_calendar_message(const domain::CalendarMessageReference& reference);
     std::optional<domain::CalendarMessageReference> calendar_message(
         domain::CalendarId calendar_id);
