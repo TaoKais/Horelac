@@ -9,9 +9,10 @@ FROM debian:trixie-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends libsqlite3-0 libcairo2 libssl3 zlib1g ca-certificates tzdata && rm -rf /var/lib/apt/lists/* && groupadd --system horelac && useradd --system --gid horelac --home-dir /app horelac
 WORKDIR /app
 COPY --from=build /src/build/horelac /usr/local/bin/horelac
+COPY --from=build /src/build/_deps/dpp-build/library/libdpp.so* /usr/local/lib/
 COPY --from=build /src/locales /app/locales
 COPY --from=build /src/migrations /app/migrations
-RUN mkdir -p /data /app/rendered && chown -R horelac:horelac /data /app
+RUN ldconfig && mkdir -p /data /app/rendered && chown -R horelac:horelac /data /app
 USER horelac
 ENV DATABASE_PATH=/data/horelac.db
 VOLUME ["/data"]
